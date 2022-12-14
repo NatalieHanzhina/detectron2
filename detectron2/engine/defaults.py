@@ -635,7 +635,6 @@ Alternatively, you can call evaluation functions yourself (see Colab balloon tut
             cfg.freeze()
         return cfg
 
-
 # Access basic attributes from the underlying trainer
 for _attr in ["model", "data_loader", "optimizer"]:
     setattr(
@@ -648,3 +647,4 @@ for _attr in ["model", "data_loader", "optimizer"]:
             lambda self, value, x=_attr: setattr(self._trainer, x, value),
         ),
     )
+

@@ -12,7 +12,6 @@ MODEL:
     IOU_THRESHOLDS: [0.4, 0.5]
     IOU_LABELS: [0, -1, 1]
     SMOOTH_L1_LOSS_BETA: 0.11
-    FOCAL_LOSS_ALPHA: 0.5
 DATASETS:
   TRAIN: ("coco_2017_train",)
   TEST: ("coco_2017_val",)

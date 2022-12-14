@@ -21,6 +21,9 @@ from .. import DatasetCatalog, MetadataCatalog
 This file contains functions to parse COCO-format annotations into dicts in "Detectron2 format".
 """
 
+noise = True
+noise_level = 0.25
+
 
 logger = logging.getLogger(__name__)
 
@@ -202,6 +205,16 @@ Category ids in annotations are not in [1, #categories]! We'll apply a mapping f
                 annotation_category_id = obj["category_id"]
                 try:
                     obj["category_id"] = id_map[annotation_category_id]
+                    if noise:
+                        min = min(id_map.keys())
+                        max = max(id_map.keys())
+                        if np.random.random() <= noise_level:
+                            noisy_value = obj["category_id"]
+                            while noisy_value == obj["category_id"]:
+                                noisy_value = np.random.randint(min, max, 1)
+                            print(min, max, obj["category_id"], noisy_value)
+                            obj["category_id"] = noisy_value
+                    # cat_ids
                 except KeyError as e:
                     raise KeyError(
                         f"Encountered category_id={annotation_category_id} "

@@ -141,7 +141,7 @@ class RetinaNet(nn.Module):
 
         self.register_buffer("pixel_mean", torch.Tensor(pixel_mean).view(-1, 1, 1))
         self.register_buffer("pixel_std", torch.Tensor(pixel_std).view(-1, 1, 1))
-
+        # print("____________focal_loss_alpha=", focal_loss_alpha)
 
         """
         In Detectron1, loss is normalized by number of foreground samples in the batch.
@@ -627,31 +627,27 @@ def _focal_loss(focal_s, inputs: Tensor,
                 gamma: float = 2,
                 reduction: str = "none",
                 ) -> torch.Tensor:
-    p = torch.sigmoid(inputs)
-    # focal_s = torch.clamp(focal_s, -1.0, 2.0)
+    p = torch.softmax(inputs)
     ce_loss = F.binary_cross_entropy_with_logits(inputs, targets, reduction="none") * torch.exp(-focal_s) + focal_s / 2
 
     p_t = p * targets + (1 - p) * (1 - targets)
-    loss = ce_loss * (torch.exp(-0.5 * focal_s) * (1 - p_t) ** torch.exp(-focal_s)) ** gamma
+    # in tf version Natalia did this:
+    loss = ce_loss * (1 - p_t * torch.exp(-1.5 * torch.pow(focal_s, 2))) ** gamma
+    # In Alexey thesis approximated verison was proposed:
+    # loss = ce_loss * ((1 - p_t ** torch.exp(-focal_s) * torch.exp(-0.5 * focal_s)) ** gamma)
 
-    # loss_correction = focal_s / 2 * (1 - torch.exp(-1.5 * focal_s)) ** gamma
 
     if alpha >= 0:
         alpha_t = alpha * targets + (1 - alpha) * (1 - targets)
         loss = alpha_t * loss
-        # loss_correction = alpha_t * loss_correction
 
-    # loss = loss - loss_correction
-    # loss = loss + torch.pow(focal_s, 2)
+
+
 
     if reduction == "mean":
         loss = loss.mean()
     elif reduction == "sum":
         loss = loss.sum()
-    #
-    # if not np.isfinite(np.mean(loss.detach().cpu().item())):
-    # # if (focal_s.grad is not None):
-    #     logger.debug(f"focal_s: {focal_s.detach().cpu().numpy()},"
-    #                  f"focal_s_grad: {focal_s.grad.detach().to('cpu').numpy()}")
+    
 
-    return loss #+ torch.pow(focal_s, 2)
+    return loss 

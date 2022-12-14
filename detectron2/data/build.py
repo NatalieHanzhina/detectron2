@@ -21,6 +21,7 @@ from .dataset_mapper import DatasetMapper
 from .detection_utils import check_metadata_consistency
 from .samplers import InferenceSampler, RepeatFactorTrainingSampler, TrainingSampler
 
+
 """
 This file contains the default logic to build a dataloader for training or testing.
 """
@@ -34,6 +35,8 @@ __all__ = [
     "print_instances_class_histogram",
 ]
 
+noise = True
+noise_level = 0.05
 
 def filter_images_with_only_crowd_annotations(dataset_dicts):
     """
@@ -156,6 +159,27 @@ def load_proposals_into_dataset(dataset_dicts, proposal_file):
 
     return dataset_dicts
 
+def add_noise(dataset_dicts, class_names):
+    """
+    Args:
+        dataset_dicts (list[dict]): list of dataset dicts.
+        class_names (list[str]): list of class names (zero-indexed).
+    """
+    print("ENTERING NOISE")
+    if noise:
+        print("ADDING NOISE")
+        for entry in dataset_dicts:
+            annos = entry["annotations"]
+            min = min(annos)
+            max = max(annos)
+            print('___________________',min, max)
+            for obj in annos:
+                if np.random.random() <= noise_level:
+                    noisy_value = obj["category_id"]
+                    while noisy_value == obj["category_id"]:
+                        noisy_value = np.random.randint(min, max, 1)
+                    print(min, max, obj["category_id"], noisy_value)
+                    obj["category_id"] = noisy_value
 
 def print_instances_class_histogram(dataset_dicts, class_names):
     """
@@ -248,15 +272,18 @@ def get_detection_dataset_dicts(
         dataset_dicts = filter_images_with_only_crowd_annotations(dataset_dicts)
     if min_keypoints > 0 and has_instances:
         dataset_dicts = filter_images_with_few_keypoints(dataset_dicts, min_keypoints)
+    print("HAS INSTANCES?", has_instances)
 
     if has_instances:
+        print("HAS INSTANCES")
         try:
             class_names = MetadataCatalog.get(dataset_names[0]).thing_classes
             check_metadata_consistency("thing_classes", dataset_names)
             print_instances_class_histogram(dataset_dicts, class_names)
+
         except AttributeError:  # class names are not available for this dataset
             pass
-
+        add_noise(dataset_dicts, class_names)
     assert len(dataset_dicts), "No valid data found in {}.".format(",".join(dataset_names))
     return dataset_dicts
 
