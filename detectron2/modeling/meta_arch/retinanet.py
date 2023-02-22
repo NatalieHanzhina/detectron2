@@ -632,9 +632,9 @@ def _focal_loss(focal_s, inputs: Tensor,
 
     p_t = p * targets + (1 - p) * (1 - targets)
     # in tf version Natalia did this:
-    loss = ce_loss * (1 - p_t * torch.exp(-1.5 * torch.pow(focal_s, 2))) ** gamma
+    # loss = ce_loss * (1 - p_t * torch.exp(-1.5 * torch.pow(focal_s, 2))) ** gamma
     # In Alexey thesis approximated verison was proposed:
-    # loss = ce_loss * ((1 - p_t ** torch.exp(-focal_s) * torch.exp(-0.5 * focal_s)) ** gamma)
+    loss = ce_loss * ((1 - p_t ** torch.exp(-focal_s) * torch.exp(-0.5 * focal_s)) ** gamma)
 
 
     if alpha >= 0:
